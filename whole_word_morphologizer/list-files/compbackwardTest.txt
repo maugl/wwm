@@ -1,3 +1,9 @@
-outdo, VInf
 do, VInf
-undo, VInf
+outdo, VInf
+overdo, VInf
+run, VInf
+outrun, VInf
+overrun, VInf
+take, VInf
+outtake, VInf
+overtake, VInf
