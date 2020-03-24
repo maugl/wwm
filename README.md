@@ -1,0 +1,2 @@
+# wwm
+whole word morphologizer
