@@ -41,7 +41,7 @@ class Parser:
         # add newly found strategies to the set of strategies
         self.strategies = self.strategies.union(set([k + v for k, v in self.global_comparison_list.items() if
                                                      self.comparison_count[k] >= self.params["comparison_threshold"]]))
-        # self.generate()
+        self.generate()
 
     def compute_forward(self, word1, word2):
         self.insert_into_global_comparison_list(self.generate_comparison(word1, word2, True), True)
@@ -107,8 +107,8 @@ class Parser:
                            len(comparison[2])-len(self.params["same_segment"]))
         new_sim = ""
 
-        print(list_comparison)
-        print(comparison)
+        #print(list_comparison)
+        #print(comparison)
 
         if forward:
             # reverse order of checking
@@ -121,8 +121,8 @@ class Parser:
             merge_sim = comparison[4][sim_same_len:]
             same_part = list_comparison[4][:sim_same_len]
 
-        print(list_sim)
-        print(merge_sim)
+        #print(list_sim)
+        #print(merge_sim)
 
         for i, char in enumerate(list_sim):
             if i < len(merge_sim):
@@ -138,8 +138,8 @@ class Parser:
         if len(merge_sim) > len(list_sim):
             new_sim += (len(merge_sim) - len(list_sim)) * self.params["zero_one_char"]
 
-        print("new: " +  new_sim[::-1] if forward else new_sim)
-        print((new_sim[::-1] + same_part if forward else same_part + new_sim,))
+        #print("new: " +  new_sim[::-1] if forward else new_sim)
+        #print((new_sim[::-1] + same_part if forward else same_part + new_sim,))
         self.global_comparison_list[comparison[:4]] = (new_sim[::-1] + same_part if forward else same_part + new_sim,)
 
     def read_lexicon(self, word_list_file):
@@ -149,19 +149,42 @@ class Parser:
                 self.lexicon.append((contents[0].strip().lower(), contents[1].strip()))
 
     def generate(self):
+        newly_generated_words = list()
+        known_generated_words = list()
+        strat_generated_words = list()
+        re_generated_words = list()
+
         for strat in self.strategies:
             w1dif = strat[0]
+            len_dif_segment = max(len(w1dif), len(strat[2])) - len(self.params["same_segment"])
             if w1dif.startswith(self.params["same_segment"]):
                 w1dif = w1dif.replace(self.params["same_segment"], "")
-                search_re = strat[4][len(w1dif):] + w1dif
+                search_re = strat[4][:len_dif_segment] + w1dif
             elif w1dif.endswith(self.params["same_segment"]):
                 w1dif = w1dif.replace(self.params["same_segment"], "")
-                search_re = w1dif + strat[4][len(w1dif):]
+                search_re = w1dif + strat[4][len_dif_segment:]
             else:
                 continue
-            # search_re = search_re.replace(self.params["zero_one_char"], "\w?").replace(self.params["one_char"], "\w")
-            #print(search_re)
 
+            search_re = search_re.replace(self.params["zero_one_char"], "\w?").replace(self.params["one_char"], "\w")
+            regex = re.compile(search_re)
+
+            for word in self.lexicon:
+                if regex.match(word[0]):
+                    new_word = strat[2].replace(self.params["same_segment"], word[0].replace(w1dif, "")), strat[3]
+                    if new_word in self.lexicon:
+                        known_generated_words.append(new_word)
+                    else:
+                        newly_generated_words.append(new_word)
+                        strat_generated_words.append(strat)
+
+
+        print("old: ")
+        print(known_generated_words)
+        print("new: ")
+        print(newly_generated_words)
+        print("strat: ")
+        print(strat_generated_words)
 
 if __name__ == "__main__":
     p = Parser("./list-files/en_gum-ud-dev-list.txt")
