@@ -10,6 +10,9 @@ class Parser:
         self.global_comparison_list = dict()
         self.strategies = set()
 
+        self.generated_known_words = set()
+        self.generated_new_words = set()
+
         self.params = {
             "begin_sequence_overlap": 2,
             "end_sequence_overlap": 2,
@@ -33,6 +36,7 @@ class Parser:
                 # which are by some heuristic sufficiently similar in
                 # the first place are compared.
                 if get_beginning_sequence_overlap(w1, w2) >= self.params["begin_sequence_overlap"]:
+                    # levenshtein?
                     self.compute_forward(w1, w2)
                 # why not check both? back and forward?
                 elif get_ending_sequence_overlap(w1, w2) >= self.params["end_sequence_overlap"]:
@@ -41,7 +45,10 @@ class Parser:
         # add newly found strategies to the set of strategies
         self.strategies = self.strategies.union(set([k + v for k, v in self.global_comparison_list.items() if
                                                      self.comparison_count[k] >= self.params["comparison_threshold"]]))
-        self.generate()
+        known_words, new_words = self.generate()
+
+        self.generated_known_words = known_words
+        self.generated_new_words = new_words
 
     def compute_forward(self, word1, word2):
         self.insert_into_global_comparison_list(self.generate_comparison(word1, word2, True), True)
@@ -147,12 +154,11 @@ class Parser:
             for line in f.readlines():
                 contents = line.strip("\n").split(",")
                 self.lexicon.append((contents[0].strip().lower(), contents[1].strip()))
+        self.lexicon = list(set(self.lexicon))
 
     def generate(self):
-        newly_generated_words = list()
-        known_generated_words = list()
-        strat_generated_words = list()
-        re_generated_words = list()
+        newly_generated_words = set()
+        known_generated_words = set()
 
         for strat in self.strategies:
             w1dif = strat[0]
@@ -166,25 +172,19 @@ class Parser:
             else:
                 continue
 
-            search_re = search_re.replace(self.params["zero_one_char"], "\w?").replace(self.params["one_char"], "\w")
+            search_re = search_re.replace(self.params["zero_one_char"], "\\w?").replace(self.params["one_char"], "\\w")
             regex = re.compile(search_re)
 
             for word in self.lexicon:
                 if regex.match(word[0]):
                     new_word = strat[2].replace(self.params["same_segment"], word[0].replace(w1dif, "")), strat[3]
                     if new_word in self.lexicon:
-                        known_generated_words.append(new_word)
+                        known_generated_words.add(new_word)
                     else:
-                        newly_generated_words.append(new_word)
-                        strat_generated_words.append(strat)
+                        newly_generated_words.add(new_word)
 
+        return known_generated_words, newly_generated_words
 
-        print("old: ")
-        print(known_generated_words)
-        print("new: ")
-        print(newly_generated_words)
-        print("strat: ")
-        print(strat_generated_words)
 
 if __name__ == "__main__":
     p = Parser("./list-files/en_gum-ud-dev-list.txt")
