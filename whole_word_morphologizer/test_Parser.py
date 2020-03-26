@@ -25,7 +25,10 @@ class TestParser(TestCase):
         p = Parser("./list-files/testDoubleX.txt")
         p.compute_forward(p.lexicon[0], p.lexicon[1])
 
-        test_result = ("Xcdcee", "VInf", "Xcecdd", "VInf", "abb#####")
+        print(p.global_comparison_list)
+
+        test_result = ("Xdcee", "VInf", "Xecdd", "VInf", "abbc####")
+
         assert(test_result[:4] in p.global_comparison_list)
         assert((test_result[4],) == p.global_comparison_list[test_result[:4]])
 
@@ -42,6 +45,8 @@ class TestParser(TestCase):
         from whole_word_morphologizer.Parser import Parser
         p = Parser("./list-files/testDoubleX.txt")
         p.compute_backward(p.lexicon[2], p.lexicon[3])
+
+        print(p.global_comparison_list)
 
         test_result = ("gffhiX", "VInf", "fgghjX", "VInf", "#####hjj")
         assert(test_result[:4] in p.global_comparison_list)

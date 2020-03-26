@@ -1,4 +1,4 @@
-abbcdcee,VFin
-abbcecdd,VFin
-gffhihjj,VFin
-fgghjhjj,VFin
+abbcdcee,VInf
+abbcecdd,VInf
+gffhihjj,VInf
+fgghjhjj,VInf
