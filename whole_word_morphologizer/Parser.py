@@ -54,7 +54,7 @@ class Parser:
         while i < len(orth2):
             if i < len(orth1) and orth1[i] == orth2[i]:
                 comparison[4] += orth1[i]
-                if comparison[0][-1:] != self.params["same_segment"]:
+                if not comparison[0].endswith(self.params["same_segment"]):
                     comparison[0] += self.params["same_segment"]
                     comparison[2] += self.params["same_segment"]
             else:
@@ -84,13 +84,13 @@ class Parser:
         while i <= len(orth2):
             if i <= len(orth1) and orth1[-i] == orth2[-i]:
                 comparison[4] = orth1[-i] + comparison[4]
-                if comparison[0][0:1] != self.params["same_segment"]:
+                if not comparison[0].startswith(self.params["same_segment"]):
                     comparison[0] = self.params["same_segment"] + comparison[0]
                     comparison[2] = self.params["same_segment"] + comparison[2]
-            else:
-                comparison[0] = orth1[-i] + comparison[0] if i <= len(orth1) else comparison[0]
-                comparison[2] = orth2[-i] + comparison[2]
-                comparison[4] = self.params["one_char"] + comparison[4] \
+                else:
+                    comparison[0] = orth1[-i] + comparison[0] if i <= len(orth1) else comparison[0]
+                    comparison[2] = orth2[-i] + comparison[2]
+                    comparison[4] = self.params["one_char"] + comparison[4]
                     # not needed, because if one part is longer than the other, the characters have to be there
                     # if i <= len(orth1) else self.params["zero_one_char"] + comparison[4]
             i += 1
@@ -99,6 +99,32 @@ class Parser:
             comparison[4] = (len(orth1) - len(orth2)) * self.params["one_char"] + comparison[4]
 
         self.insert_into_global_comparison_list(tuple(comparison), False)
+
+    def generate_comparison(self, word1, word2, forward):
+        comparison = ["", word1[1], "", word2[1], ""]
+        orth1 = word1[0]
+        orth2 = word2[0]
+
+        if not forward:
+            orth1 = orth1[::-1]
+            orth2 = orth2[::-1]
+
+        i = 0
+        n = max(len(orth1), len(orth2))
+        try:
+            while i < n:
+                if orth1[i] == orth2[i]:
+                    comparison[4] += orth1[i]
+                    if not comparison[0].endswith(self.params["same_segment"]):
+                        comparison[0] += self.params["same_segment"]
+                        comparison[2] += self.params["same_segment"]
+        except IndexError:
+            if len(orth1) > len(orth2):
+                comparison[0] = orth1[:len(orth1) - len(orth2)] + comparison[0]
+                comparison[4] = (len(orth1) - len(orth2)) * self.params["one_char"] + comparison[4]
+            if len(orth1) < len(orth2):
+                comparison[2] = orth2[:len(orth2) - len(orth1)] + comparison[2]
+                comparison[4] = (len(orth2) - len(orth1)) * self.params["one_char"] + comparison[4]
 
     def insert_into_global_comparison_list(self, comparison, forward):
         if comparison[:4] in self.global_comparison_list.keys():
