@@ -1,5 +1,5 @@
 from collections import Counter
-from whole_word_morphologizer.util import get_ending_sequence_overlap, get_beginning_sequence_overlap
+from util import get_ending_sequence_overlap, get_beginning_sequence_overlap
 import re
 
 

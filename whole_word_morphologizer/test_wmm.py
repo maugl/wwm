@@ -4,8 +4,7 @@ import unittest
 class TestWmm(unittest.TestCase):
 
     def test_generated_words(self):
-        from whole_word_morphologizer.Parser import Parser
-        from whole_word_morphologizer.Parser import Parser
+        from .Parser import Parser
         p = Parser("./list-files/en_gum-ud-dev-list.txt")
 
         p.wwm()
