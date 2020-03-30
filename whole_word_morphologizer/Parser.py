@@ -1,6 +1,7 @@
 from collections import Counter
-from util import get_ending_sequence_overlap, get_beginning_sequence_overlap
+from whole_word_morphologizer.util import get_ending_sequence_overlap, get_beginning_sequence_overlap
 import re
+import editdistance
 
 
 class Parser:
@@ -12,6 +13,7 @@ class Parser:
 
         self.generated_known_words = set()
         self.generated_new_words = set()
+        self.generation_used_strategies = dict()
 
         self.params = {
             "begin_sequence_overlap": 2,
@@ -19,7 +21,8 @@ class Parser:
             "comparison_threshold": 3,
             "same_segment": "X",
             "one_char": "#",
-            "zero_one_char": "*"
+            "zero_one_char": "*",
+            "editdistance_threshold": 5
         }
 
         self.read_lexicon(word_list_file)
@@ -27,28 +30,31 @@ class Parser:
     def wwm(self):
         self.comparison_count = dict()
         self.global_comparison_list = dict()
+        # TODO no need to fully loop over lexicon if generate works bidirectional
         for w1 in self.lexicon:
             for w2 in self.lexicon:
                 # differing from original code, but same words may not be compared
                 if w1 == w2:
                     continue
-                # TODO In practice, only those pairs of words
+                # In practice, only those pairs of words
                 # which are by some heuristic sufficiently similar in
                 # the first place are compared.
                 if get_beginning_sequence_overlap(w1, w2) >= self.params["begin_sequence_overlap"]:
-                    # levenshtein?
-                    self.compute_forward(w1, w2)
+                    if editdistance.distance(w1[0], w2[0]) < self.params["editdistance_threshold"]:
+                        self.compute_forward(w1, w2)
                 # why not check both? back and forward?
                 elif get_ending_sequence_overlap(w1, w2) >= self.params["end_sequence_overlap"]:
-                    self.compute_backward(w1, w2)
+                    if editdistance.distance(w1[0], w2[0]) < self.params["editdistance_threshold"]:
+                        self.compute_backward(w1, w2)
                 # print(self.global_comparison_list)
         # add newly found strategies to the set of strategies
         self.strategies = self.strategies.union(set([k + v for k, v in self.global_comparison_list.items() if
                                                      self.comparison_count[k] >= self.params["comparison_threshold"]]))
-        known_words, new_words = self.generate()
+        known_words, new_words, used_strategies = self.generate()
 
         self.generated_known_words = known_words
         self.generated_new_words = new_words
+        self.generation_used_strategies = used_strategies
 
     def compute_forward(self, word1, word2):
         self.insert_into_global_comparison_list(self.generate_comparison(word1, word2, True), True)
@@ -118,6 +124,7 @@ class Parser:
         #print(comparison)
 
         if forward:
+            # forward merge
             # reverse order of checking
             list_sim = list_comparison[4][:-sim_same_len][::-1]
             merge_sim = comparison[4][:-sim_same_len][::-1]
@@ -153,37 +160,61 @@ class Parser:
         with open(word_list_file, "r", encoding="utf-8") as f:
             for line in f.readlines():
                 contents = line.strip("\n").split(",")
-                self.lexicon.append((contents[0].strip().lower(), contents[1].strip()))
-        self.lexicon = list(set(self.lexicon))
+                word = (contents[0].strip().lower(), contents[1].strip())
+                if word not in self.lexicon:
+                    self.lexicon.append(word)
+        self.lexicon = list(self.lexicon)
 
     def generate(self):
         newly_generated_words = set()
         known_generated_words = set()
-
+        strats_used = dict()
+        # TODO loop lexicon first???
         for strat in self.strategies:
             w1dif = strat[0]
+            w2dif = strat[2]
             len_dif_segment = max(len(w1dif), len(strat[2])) - len(self.params["same_segment"])
-            if w1dif.startswith(self.params["same_segment"]):
+            if w1dif.startswith(self.params["same_segment"]) and w2dif.startswith(self.params["same_segment"]):
+                #input check from front
                 w1dif = w1dif.replace(self.params["same_segment"], "")
                 search_re = strat[4][:len_dif_segment] + w1dif
-            elif w1dif.endswith(self.params["same_segment"]):
+
+                # output check
+                w2dif = w2dif.replace(self.params["same_segment"], "")
+                output_re = strat[4][:len_dif_segment] + w2dif
+
+            elif w1dif.endswith(self.params["same_segment"]) and w2dif.endswith(self.params["same_segment"]):
+                #input check from back
                 w1dif = w1dif.replace(self.params["same_segment"], "")
                 search_re = w1dif + strat[4][len_dif_segment:]
+
+                #output check
+                w2dif = w2dif.replace(self.params["same_segment"], "")
+                output_re = w2dif + strat[4][len_dif_segment:]
             else:
+                # in case no "same_segment" is found. should not happen
                 continue
 
             search_re = search_re.replace(self.params["zero_one_char"], "\\w?").replace(self.params["one_char"], "\\w")
-            regex = re.compile(search_re)
+            s_regex = re.compile(search_re)
+
+            output_re = output_re.replace(self.params["zero_one_char"], "\\w?").replace(self.params["one_char"], "\\w")
+            o_regex = re.compile(output_re)
 
             for word in self.lexicon:
-                if regex.match(word[0]):
+                if s_regex.fullmatch(word[0]) and word[1] == strat[1]:
                     new_word = strat[2].replace(self.params["same_segment"], word[0].replace(w1dif, "")), strat[3]
-                    if new_word in self.lexicon:
-                        known_generated_words.add(new_word)
-                    else:
-                        newly_generated_words.add(new_word)
+                    if o_regex.fullmatch(new_word[0]):
+                        if new_word in self.lexicon:
+                            known_generated_words.add(new_word)
+                        else:
+                            newly_generated_words.add(new_word)
+                        if new_word not in strats_used:
+                            strats_used[new_word] = [strat + (search_re, output_re)]
+                        else:
+                            strats_used[new_word].append(strat + (search_re, output_re))
 
-        return known_generated_words, newly_generated_words
+        return known_generated_words, newly_generated_words, strats_used
 
 
 if __name__ == "__main__":

@@ -17,8 +17,6 @@ class TestParser(unittest.TestCase):
         p.compute_forward(p.lexicon[0], p.lexicon[1])
         test_result = ("Xive", "VInf", "Xption", "NSing", "rece#####")
 
-        print(p.global_comparison_list)
-
         self.assertTrue(test_result[:4] in p.global_comparison_list)
         self.assertEqual((test_result[4],), p.global_comparison_list[test_result[:4]])
 
@@ -26,8 +24,6 @@ class TestParser(unittest.TestCase):
         from Parser import Parser
         p = Parser("./list-files/testDoubleX.txt")
         p.compute_forward(p.lexicon[0], p.lexicon[1])
-
-        print(p.global_comparison_list)
 
         test_result = ("Xdcee", "VInf", "Xecdd", "VInf", "abbc####")
 
@@ -47,8 +43,6 @@ class TestParser(unittest.TestCase):
         from Parser import Parser
         p = Parser("./list-files/testDoubleX.txt")
         p.compute_backward(p.lexicon[2], p.lexicon[3])
-
-        print(p.global_comparison_list)
 
         test_result = ("gffhiX", "VInf", "fgghjX", "VInf", "#####hjj")
         self.assertTrue(test_result[:4] in p.global_comparison_list)
