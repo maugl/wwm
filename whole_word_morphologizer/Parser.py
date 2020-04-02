@@ -5,7 +5,12 @@ import editdistance
 
 
 class Parser:
-    def __init__(self, word_list_file):
+    def __init__(self, word_list_file, params=None):
+        """
+
+        :param word_list_file:
+        :param params:
+        """
         self.lexicon = list()
         self.comparison_count = dict()
         self.global_comparison_list = dict()
@@ -18,19 +23,33 @@ class Parser:
         self.params = {
             "begin_sequence_overlap": 2,
             "end_sequence_overlap": 2,
+            "editdistance_threshold": 5,
             "comparison_threshold": 3,
             "same_segment": "X",
             "one_char": "#",
             "zero_one_char": "*",
-            "editdistance_threshold": 5
         }
+        if params is not None:
+            self.params.update(params)
 
         self.read_lexicon(word_list_file)
 
     def wwm(self):
+        """
+        Executes the whole word morphologizer algorithm.
+        First strategies for converting one word to another are searched for using all words from the lexicon.
+        The newly found strategies are then added to the set of strategies.
+        With the strategies new words are generated from the lexicon by applying strategies to words where possible.
+        Generated words are written to the sets for newly generated words and known generated words.
+
+        :return: None
+        """
+        # comparison_count used for keeping track of how often a strategy was discovered
         self.comparison_count = dict()
+        # global_comparison_list used for storing all strategies found
         self.global_comparison_list = dict()
         # TODO no need to fully loop over lexicon if generate works bidirectional
+        # maybe use combination from itertools to loop once over each word
         for w1 in self.lexicon:
             for w2 in self.lexicon:
                 # differing from original code, but same words may not be compared
@@ -50,34 +69,72 @@ class Parser:
         # add newly found strategies to the set of strategies
         self.strategies = self.strategies.union(set([k + v for k, v in self.global_comparison_list.items() if
                                                      self.comparison_count[k] >= self.params["comparison_threshold"]]))
+        # should this set be cleared after each run?
+
+        # generate new words keeping track of strategies used
         known_words, new_words, used_strategies = self.generate()
 
         self.generated_known_words = known_words
         self.generated_new_words = new_words
         self.generation_used_strategies = used_strategies
 
+        # TODO integrate newly generated words into lexicon
+
     def compute_forward(self, word1, word2):
+        """
+        compute the comparison and insert it into the comparison list from front of the word (left to right)
+        :param word1: tuple of form (orthographic representation, word category)
+        :param word2: tuple of form (orthographic representation, word category)
+        :return: None
+        """
         self.insert_into_global_comparison_list(self.generate_comparison(word1, word2, True), True)
 
     def compute_backward(self, word1, word2):
+        """
+        compute the comparison and insert it into the comparison list from back of the word (right to left)
+        :param word1: tuple of form (orthographic representation, word category)
+        :param word2: tuple of form (orthographic representation, word category)
+        :return: None
+        """
         self.insert_into_global_comparison_list(self.generate_comparison(word1, word2, False), False)
 
     def generate_comparison(self, word1, word2, forward):
+        """
+        Generates a comparison tuple which represents the differences and similarities of the compared words.
+        :param word1: tuple of form (orthographic representation, word category)
+        :param word2: tuple of form (orthographic representation, word category)
+        :param forward: boolean value specifying if the comparison should be carried out:
+            - from the front of the word:
+                left to right: forward = True
+            - from the back of the word:
+                right to left: forward = False
+        :return: (difference word1, category word1, difference word2, category word2, similarities)
+        """
+        # extract orthografic representation of a word
         orth1 = word1[0]
         orth2 = word2[0]
 
+        # get the length of the same segments of the words from front or back.
+        # These are the similarities of the two compared words.
         if not forward:
+            # reverse orthografic representation in order to use the same code for both directions
             orth1 = orth1[::-1]
             orth2 = orth2[::-1]
             overlap = get_ending_sequence_overlap(word1, word2)
         else:
             overlap = get_beginning_sequence_overlap(word1, word2)
 
+        # extract the difference segements for each word. This segment is the "non-same" part for each word
         dif_w1 = self.params["same_segment"] + orth1[overlap:]
         dif_w2 = self.params["same_segment"] + orth2[overlap:]
+        # compute the similarities. the same segment concatenated with the length of the non overlapping part in
+        # abstracted form.
+        # here the length total length of the longer word is used. Both words can be extracted by using the differences
+        # in combination with the similarities.
         sim = orth1[:overlap] + (max(len(orth1), len(orth2)) - overlap) * self.params["one_char"]
 
         if not forward:
+            # reverse again for correct output sequence of characters
             dif_w1 = dif_w1[::-1]
             dif_w2 = dif_w2[::-1]
             sim = sim[::-1]
@@ -85,6 +142,17 @@ class Parser:
         return dif_w1, word1[1], dif_w2, word2[1], sim
 
     def insert_into_global_comparison_list(self, comparison, forward):
+        """
+
+        :param comparison: tuple of form
+                            (difference word1, category word1, difference word2, category word2, similarities)
+        :param forward: boolean value specifying if the potential merge should be carried out:
+            - from the front of the word:
+                left to right: forward = True
+            - from the back of the word:
+                right to left: forward = False
+        :return: None
+        """
         if comparison[:4] in self.global_comparison_list.keys():
             self.merge(comparison, forward)
             self.comparison_count[comparison[:4]] += 1
@@ -93,7 +161,7 @@ class Parser:
             self.comparison_count[comparison[:4]] = 1
 
     def merge(self, comparison, forward):
-        '''
+        """
         Split the similarities into two parts. And then compare the difference part back to front, in order to determine
         same substrings between words.
 
@@ -110,11 +178,15 @@ class Parser:
 
         Example backward:
 
-
-        :param comparison: 
-        :param forward: 
-        :return: 
-        '''
+        :param comparison: tuple of form
+                            (difference word1, category word1, difference word2, category word2, similarities)
+        :param forward: boolean value specifying if the potential merge should be carried out:
+            - from the front of the word:
+                left to right: forward = True
+            - from the back of the word:
+                right to left: forward = False
+        :return: None
+        """
         list_comparison = comparison[:4] + self.global_comparison_list[comparison[:4]]
         sim_same_len = max(len(comparison[0])-len(self.params["same_segment"]),
                            len(comparison[2])-len(self.params["same_segment"]))
@@ -175,7 +247,7 @@ class Parser:
             w2dif = strat[2]
             len_dif_segment = max(len(w1dif), len(strat[2])) - len(self.params["same_segment"])
             if w1dif.startswith(self.params["same_segment"]) and w2dif.startswith(self.params["same_segment"]):
-                #input check from front
+                # input check from front
                 w1dif = w1dif.replace(self.params["same_segment"], "")
                 search_re = strat[4][:len_dif_segment] + w1dif
 
@@ -184,11 +256,11 @@ class Parser:
                 output_re = strat[4][:len_dif_segment] + w2dif
 
             elif w1dif.endswith(self.params["same_segment"]) and w2dif.endswith(self.params["same_segment"]):
-                #input check from back
+                # input check from back
                 w1dif = w1dif.replace(self.params["same_segment"], "")
                 search_re = w1dif + strat[4][len_dif_segment:]
 
-                #output check
+                # output check
                 w2dif = w2dif.replace(self.params["same_segment"], "")
                 output_re = w2dif + strat[4][len_dif_segment:]
             else:
