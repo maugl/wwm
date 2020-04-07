@@ -43,6 +43,7 @@ class Parser:
         The newly found strategies are then added to the set of strategies.
         With the strategies new words are generated from the lexicon by applying strategies to words where possible.
         Generated words are written to the sets for newly generated words and known generated words.
+        Newly generated words are added to the lexicon.
 
         :return: None
         """
@@ -146,6 +147,9 @@ class Parser:
 
     def insert_into_global_comparison_list(self, comparison, forward):
         """
+        takes a comparison tuple and integrates it into the global comparison list. If the type of comparison exists
+        (differences and categories matching), then it is merged with the new comparison. Else the comparison is simply
+        added to the list.
 
         :param comparison: tuple of form
                             (difference word1, category word1, difference word2, category word2, similarities)
@@ -241,6 +245,11 @@ class Parser:
         self.lexicon = list(self.lexicon)
 
     def generate(self):
+        """
+        Uses the strategies in order to generate new words from the lexicon by applying strategies.
+
+        :return: known_generated_words, newly_generated_words, strats_used
+        """
         newly_generated_words = set()
         known_generated_words = set()
         strats_used = dict()
