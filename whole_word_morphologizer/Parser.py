@@ -7,9 +7,11 @@ import editdistance
 class Parser:
     def __init__(self, word_list_file, params=None):
         """
+        wrapper for the whole word morphologizer. reads word_list_file into lexicon and
+        sets parameters for the wwm algorithm
 
-        :param word_list_file:
-        :param params:
+        :param word_list_file: word list, comma separated in form: orthographic representation, category
+        :param params: parameters can be specified. if None default parameters are used
         """
         self.lexicon = list()
         self.comparison_count = dict()
@@ -78,7 +80,8 @@ class Parser:
         self.generated_new_words = new_words
         self.generation_used_strategies = used_strategies
 
-        # TODO integrate newly generated words into lexicon
+        # add new words to lexicon for iterability
+        self.lexicon.extend(new_words)
 
     def compute_forward(self, word1, word2):
         """

@@ -27,9 +27,8 @@ class TestGenerate(unittest.TestCase):
         p = Parser("./list-files/compbackwardTest.txt")
         p.params["comparison_threshold"] = 1
 
-        word_to_check = ("take", "VInf")
+        word_to_check = ("ake", "VInf")
         p.lexicon.remove(word_to_check)
 
         p.wwm()
-        print(p.generated_new_words)
         self.assertTrue(word_to_check in p.generated_new_words)
