@@ -268,16 +268,18 @@ class Parser:
             if w1dif.startswith(self.params["same_segment"]) and w2dif.startswith(self.params["same_segment"]):
                 # input check from front
                 w1dif = w1dif.replace(self.params["same_segment"], "")
-                search_re = strat[4][:len_dif_segment] + w1dif
+                search_re = strat[4][:-len_dif_segment] + w1dif
+                sub_re = w1dif + "$"
 
                 # output check
                 w2dif = w2dif.replace(self.params["same_segment"], "")
-                output_re = strat[4][:len_dif_segment] + w2dif
+                output_re = strat[4][:-len_dif_segment] + w2dif
 
             elif w1dif.endswith(self.params["same_segment"]) and w2dif.endswith(self.params["same_segment"]):
                 # input check from back
                 w1dif = w1dif.replace(self.params["same_segment"], "")
                 search_re = w1dif + strat[4][len_dif_segment:]
+                sub_re = "^" + w1dif
 
                 # output check
                 w2dif = w2dif.replace(self.params["same_segment"], "")
@@ -292,9 +294,12 @@ class Parser:
             output_re = output_re.replace(self.params["zero_one_char"], "\\w?").replace(self.params["one_char"], "\\w")
             o_regex = re.compile(output_re)
 
+            sub_regex = re.compile(sub_re)
+
             for word in self.lexicon:
                 if s_regex.fullmatch(word[0]) and word[1] == strat[1]:
-                    new_word = strat[2].replace(self.params["same_segment"], word[0].replace(w1dif, "")), strat[3]
+                    # replace only first or last occurrence
+                    new_word = strat[2].replace(self.params["same_segment"], sub_regex.sub("", word[0])), strat[3]
                     if o_regex.fullmatch(new_word[0]):
                         if new_word in self.lexicon:
                             known_generated_words.add(new_word)

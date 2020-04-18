@@ -4,7 +4,7 @@ from whole_word_morphologizer import Parser
 import numpy as np
 
 if __name__ == "__main__":
-    p = Parser.Parser("C:/Users/Max/git/ReposWS1920/wwm/whole_word_morphologizer/list-files/MobyDickList.txt")
+    p = Parser.Parser("./list-files/MobyDickList.txt")
 
     lex = p.lexicon
     np_lex = np.array(lex)
