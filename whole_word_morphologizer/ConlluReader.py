@@ -6,7 +6,7 @@ class ConlluReader:
         self.input_file = input_file
         self.output_file = output_file
 
-        self.lexicon = None
+        self.lexicon = list()
 
         self.read_input()
 
@@ -30,6 +30,9 @@ def read_conllu_file(input_file):
                 category = token["xpostag"]
             elif token["upostag"] == "VERB":
                 feats = token["feats"]
+                if feats is None:
+                    print(token["form"], token["feats"])
+                    continue
                 category = "V"
                 for v_feat in verb_features:
                     category += feats[v_feat] if v_feat in feats.keys() else ""
@@ -52,9 +55,22 @@ def write_list(output, output_file):
 
 
 if __name__ == "__main__":
-    in_file = "C:\\Users\\Max\\git\\ReposWS1920\\wwm\\whole_word_morphologizer\\ud-files\\en_gum-ud-dev.conllu"
-    out_file = "C:\\Users\\Max\\git\\ReposWS1920\\wwm\\whole_word_morphologizer\\list-files" \
-               "\\en_gum-ud-dev-list.txt"
-    r = ConlluReader(in_file, out_file)
-    print(len(r.lexicon))
-    r.write_output()
+    in_files = [
+        "/home/max/git/WS1819/a12-maugl/ud-treebanks-v2.3/UD_English-GUM/en_gum-ud-dev.conllu",
+        "/home/max/git/WS1819/a12-maugl/ud-treebanks-v2.3/UD_English-GUM/en_gum-ud-test.conllu"]
+
+    out_files = [
+        "/home/max/git/WS1920/wwm/whole_word_morphologizer/list-files/en_gum-ud-dev.txt",
+        "/home/max/git/WS1920/wwm/whole_word_morphologizer/list-files/en_gum-ud-test.txt"
+    ]
+
+    compiled_reader = ConlluReader("/home/max/git/WS1819/a12-maugl/ud-treebanks-v2.3/UD_English-GUM/en_gum-ud-train.conllu",
+                                   "/home/max/git/WS1920/wwm/whole_word_morphologizer/list-files/en_gum-ud-train.txt")
+
+    for i, o in zip(in_files[1:], out_files[1:]):
+        r = ConlluReader(i, o)
+        print(len(r.lexicon))
+        compiled_reader.lexicon.extend(r.lexicon)
+
+    compiled_reader.output_file = "/home/max/git/WS1920/wwm/whole_word_morphologizer/list-files/en_gum-ud-total.txt"
+    compiled_reader.write_output()

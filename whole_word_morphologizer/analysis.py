@@ -4,6 +4,9 @@ from whole_word_morphologizer import Parser
 import numpy as np
 
 if __name__ == "__main__":
+    p_compare = Parser.Parser("./list-files/mobydick_gum_ewt_total.txt")
+    lex_compare = set(p_compare.lexicon)
+
     p = Parser.Parser("./list-files/MobyDickList.txt")
 
     lex = p.lexicon
@@ -26,8 +29,9 @@ if __name__ == "__main__":
         p.params = params
         correct = list()
         count_total = len(lex)
+
         for word in p.generated_new_words:
-            if word in lex:
+            if word in lex_compare:
                 correct.append(word)
 
         parsers.append(p)
@@ -36,6 +40,6 @@ if __name__ == "__main__":
     for i in range(len(parsers)):
         print("number of new words: " + str(len(parsers[i].generated_new_words)))
         print("number of correct words: " + str(len(correct_list[i])))
-        print("number of total words: " + str(len(lex)))
+        print("number of total words: " + str(len(lex_compare)))
         print("accuracy: " + str(len(correct_list[i])/len(parsers[i].generated_new_words)))
-        print("recall: " + str(len(correct_list[i])/len(lex)))
+        print("recall: " + str(len(correct_list[i])/len(lex_compare)))
