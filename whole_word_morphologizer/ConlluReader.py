@@ -33,9 +33,8 @@ def read_conllu_file(input_file):
                 category = "V"
                 for v_feat in verb_features:
                     category += feats[v_feat] if v_feat in feats.keys() else ""
-                '''elif token["upostag"] == "ADJ":
-                    category = token["xpostag"]
-                '''
+            elif token["upostag"] == "ADJ":
+                category = token["xpostag"]
             else:
                 continue
             output.add((token["form"].lower(), category))
@@ -55,7 +54,7 @@ def write_list(output, output_file):
 if __name__ == "__main__":
     in_file = "C:\\Users\\Max\\git\\ReposWS1920\\wwm\\whole_word_morphologizer\\ud-files\\en_gum-ud-dev.conllu"
     out_file = "C:\\Users\\Max\\git\\ReposWS1920\\wwm\\whole_word_morphologizer\\list-files" \
-               "\\en_gum-ud-dev-list_test.txt"
+               "\\en_gum-ud-dev-list.txt"
     r = ConlluReader(in_file, out_file)
     print(len(r.lexicon))
     r.write_output()

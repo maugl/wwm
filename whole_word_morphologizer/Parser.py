@@ -2,10 +2,11 @@ from collections import Counter
 from whole_word_morphologizer.util import get_ending_sequence_overlap, get_beginning_sequence_overlap
 import re
 import editdistance
+from datetime import datetime
 
 
 class Parser:
-    def __init__(self, word_list_file, params=None):
+    def __init__(self, word_list_file=None, params=None):
         """
         wrapper for the whole word morphologizer. reads word_list_file into lexicon and
         sets parameters for the wwm algorithm
@@ -33,8 +34,8 @@ class Parser:
         }
         if params is not None:
             self.params.update(params)
-
-        self.read_lexicon(word_list_file)
+        if word_list_file is not None:
+            self.read_lexicon(word_list_file)
 
     def wwm(self):
         """
@@ -53,6 +54,8 @@ class Parser:
         self.global_comparison_list = dict()
         # TODO no need to fully loop over lexicon if generate works bidirectional
         # maybe use combination from itertools to loop once over each word
+
+        print(str(datetime.now()) + ": discovering comparisons...")
         for w1 in self.lexicon:
             for w2 in self.lexicon:
                 # differing from original code, but same words may not be compared
@@ -69,11 +72,14 @@ class Parser:
                     if editdistance.distance(w1[0], w2[0]) < self.params["editdistance_threshold"]:
                         self.compute_backward(w1, w2)
                 # print(self.global_comparison_list)
+
         # add newly found strategies to the set of strategies
+        print(str(datetime.now()) + ": extracting strategies...")
         self.strategies = self.strategies.union(set([k + v for k, v in self.global_comparison_list.items() if
                                                      self.comparison_count[k] >= self.params["comparison_threshold"]]))
         # should this set be cleared after each run?
 
+        print(str(datetime.now()) + ": generating...")
         # generate new words keeping track of strategies used
         known_words, new_words, used_strategies = self.generate()
 
@@ -83,6 +89,7 @@ class Parser:
 
         # add new words to lexicon for iterability
         self.lexicon.extend(new_words)
+        print(str(datetime.now()) + ": done!")
 
     def compute_forward(self, word1, word2):
         """
