@@ -12,19 +12,25 @@ if __name__ == "__main__":
     lex = p.lexicon
     np_lex = np.array(lex)
 
-    k_fold = KFold(2, True)
+    k_fold = KFold(6, True)
 
     params = {
+        "begin_sequence_overlap": 4,
+        "end_sequence_overlap": 4,
         "comparison_threshold": 32,
-        "editdistance_threshold": 8
+        "editdistance_threshold": 3
     }
 
     parsers = list()
     correct_list = list()
+    number_of_words_in_fold = list()
 
     for check, test in k_fold.split(np_lex):
         p = Parser.Parser()
         p.lexicon = [(x, y) for x, y in np_lex[test]]
+
+        number_of_words_in_fold.append(len(p.lexicon))
+
         p.wwm()
         p.params = params
         correct = list()
@@ -38,8 +44,10 @@ if __name__ == "__main__":
         correct_list.append(correct)
 
     for i in range(len(parsers)):
+        print("number of words in fold: " + str(number_of_words_in_fold[i]))
         print("number of new words: " + str(len(parsers[i].generated_new_words)))
+        print("number of strategies discovered: " + str(len(parsers[i].strategies)))
         print("number of correct words: " + str(len(correct_list[i])))
-        print("number of total words: " + str(len(lex_compare)))
+        print("number of total comparison words: " + str(len(lex_compare)))
         print("accuracy: " + str(len(correct_list[i])/len(parsers[i].generated_new_words)))
         print("recall: " + str(len(correct_list[i])/len(lex_compare)))
