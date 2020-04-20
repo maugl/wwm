@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 class Parser:
-    def __init__(self, word_list_file=None, params=None):
+    def __init__(self, word_list_file=None, params=None, sep=","):
         """
         wrapper for the whole word morphologizer. reads word_list_file into lexicon and
         sets parameters for the wwm algorithm
@@ -15,6 +15,7 @@ class Parser:
         :param params: parameters can be specified. if None default parameters are used
         """
         self.lexicon = list()
+        self.sep = sep
         self.comparison_count = dict()
         self.global_comparison_list = dict()
         self.strategies = set()
@@ -245,7 +246,7 @@ class Parser:
     def read_lexicon(self, word_list_file):
         with open(word_list_file, "r", encoding="utf-8") as f:
             for line in f.readlines():
-                contents = line.strip("\n").split(",")
+                contents = line.strip("\n").split(self.sep)
                 word = (contents[0].strip().lower(), contents[1].strip())
                 if word not in self.lexicon:
                     self.lexicon.append(word)
