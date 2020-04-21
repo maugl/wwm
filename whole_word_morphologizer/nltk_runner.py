@@ -6,7 +6,7 @@ with open("/MobyDick.txt", "r", encoding="utf-8") as f:
     text = f.read()
 
 md_tokenized = nltk.word_tokenize(text=text, language="english")
-md_tagged = nltk.pos_tag(md_tokenized)
+md_tagged = nltk.pos_tag(md_tokenized, )
 tags = ["VB", "VBD", "VBG", "VBN", "VBP", "VBZ", "JJ", "JJR", "JJS", "NNS", "NN"]
 md_tagged_filtered = {(orth.lower(), cat) for orth, cat in md_tagged if cat in tags}
 

@@ -15,14 +15,14 @@ if __name__ == "__main__":
     k_fold = KFold(6, True)
 
     bnc_tagset = ["AJ0", "AJC", "AJS", "NN1", "NN2", "VVB", "VVD", "VVG", "VVI", "VVN", "VVZ"]
-    nltk_tagset = ["JJ", "JJR", "JJS", "NN", "NNS", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ"]
-    nltk_to_bnc = {k: v for k, v in zip(nltk_tagset, bnc_tagset)}
+    upenn_tagset = ["JJ", "JJR", "JJS", "NN", "NNS", "VB", "VBD", "VBG", "VBP", "VBN", "VBZ"]
+    upenn_to_bnc = {k: v for k, v in zip(upenn_tagset, bnc_tagset)}
 
     params = {
-        "begin_sequence_overlap": 4,
-        "end_sequence_overlap": 4,
-        "comparison_threshold": 32,
-        "editdistance_threshold": 3
+        "begin_sequence_overlap": 3,
+        "end_sequence_overlap": 3,
+        "comparison_threshold": 16,
+        "editdistance_threshold": 5
     }
 
     parsers = list()
@@ -34,14 +34,15 @@ if __name__ == "__main__":
         p.lexicon = [(x, y) for x, y in np_lex[test]]
 
         number_of_words_in_fold.append(len(p.lexicon))
+        p.params.update(params)
 
         p.wwm()
-        p.params = params
+
         correct = list()
         count_total = len(lex)
 
         for word in p.generated_new_words:
-            if "{},{}\n".format(word[0], nltk_to_bnc[word[1]]) in compare:
+            if "{},{}\n".format(word[0], upenn_to_bnc[word[1]]) in compare:
                 correct.append(word)
 
         parsers.append(p)
