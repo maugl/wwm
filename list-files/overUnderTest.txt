@@ -1,0 +1,6 @@
+underpass, NSing
+overpass, NSing
+underripe, A
+overripe, A
+underexposed, VPastPart
+superexposed, VPastPart

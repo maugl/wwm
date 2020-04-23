@@ -1,6 +1,0 @@
-receive, VInf
-reception, NSing
-conceive, VInf
-conception, NSing
-deceive, VInf
-deception, NSing

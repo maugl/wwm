@@ -1,5 +1,0 @@
-outrun, VPresFin
-overrun, VPresFin
-outperform, VPresFin
-overperform, VPresFin
-outlast, VPresFin

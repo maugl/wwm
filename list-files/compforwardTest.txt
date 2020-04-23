@@ -1,0 +1,4 @@
+outlive, VInf
+outlived, VPastPart
+outcomes, NNS
+outfit, NN
