@@ -6,4 +6,4 @@ outrun, VInf
 overrun, VInf
 take, VInf
 outtake, VInf
-overake, VInf
+overtake, VInf
