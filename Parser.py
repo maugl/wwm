@@ -1,4 +1,3 @@
-from util import get_ending_sequence_overlap, get_beginning_sequence_overlap
 import re
 import editdistance
 from datetime import datetime
@@ -64,11 +63,11 @@ class Parser:
                 # In practice, only those pairs of words
                 # which are by some heuristic sufficiently similar in
                 # the first place are compared.
-                if get_beginning_sequence_overlap(w1, w2) >= self.params["begin_sequence_overlap"]:
+                if self.get_beginning_sequence_overlap(w1, w2) >= self.params["begin_sequence_overlap"]:
                     if editdistance.distance(w1[0], w2[0]) < self.params["editdistance_threshold"]:
                         self.compute_forward(w1, w2)
                 # why not check both? back and forward?
-                elif get_ending_sequence_overlap(w1, w2) >= self.params["end_sequence_overlap"]:
+                elif self.get_ending_sequence_overlap(w1, w2) >= self.params["end_sequence_overlap"]:
                     if editdistance.distance(w1[0], w2[0]) < self.params["editdistance_threshold"]:
                         self.compute_backward(w1, w2)
                 # print(self.global_comparison_list)
@@ -131,9 +130,9 @@ class Parser:
             # reverse orthografic representation in order to use the same code for both directions
             orth1 = orth1[::-1]
             orth2 = orth2[::-1]
-            overlap = get_ending_sequence_overlap(word1, word2)
+            overlap = self.get_ending_sequence_overlap(word1, word2)
         else:
-            overlap = get_beginning_sequence_overlap(word1, word2)
+            overlap = self.get_beginning_sequence_overlap(word1, word2)
 
         # extract the difference segements for each word. This segment is the "non-same" part for each word
         dif_w1 = self.params["same_segment"] + orth1[overlap:]
@@ -312,7 +311,21 @@ class Parser:
 
         return known_generated_words, newly_generated_words, strats_used
 
+    def get_beginning_sequence_overlap(self, word1, word2):
+        i = 0
+        while i < len(word1[0]) and i < len(word2[0]) and word1[0][i] == word2[0][i]:
+            i += 1
+        return i
+
+    def get_ending_sequence_overlap(self, word1, word2):
+        i = 0
+        while i < len(word1[0]) and i < len(word2[0]) and \
+                word1[0][len(word1[0]) - i - 1] == word2[0][len(word2[0]) - i - 1]:
+            i += 1
+        return i
+
 
 if __name__ == "__main__":
     p = Parser("list-files/en_gum-ud-dev-list.txt")
-    print(p.lexicon[:25])
+    p.wwm()
+    print(list(p.generated_new_words)[:25])
